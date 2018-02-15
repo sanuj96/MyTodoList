@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>TodoList</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script type="text/javascript">
+
+    function fadeLess(x) {
+       x.style.opacity = 1;
+    }
+
+    function fadeMore(x) {
+       x.style.opacity = 0.81;
+    }
+    
+  </script>
+  
+  <style type="text/css">
+
+    .panel-body {
+      padding-left: 10px;
+      padding-right: 10px;
+      padding-bottom: 10px;
+      padding-top: 10px;
+    }
+    
+    body {
+      background-image: url("https://user-images.githubusercontent.com/16771666/36156089-1d94d806-10fc-11e8-91a4-6892a859b987.png");
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center; 
+      background-size:cover;
+    }
+
+    .panel-group {
+      opacity: 0.81;
+    }
+
+  </style>
+
+</head>
+
+<body>
+<div style="height:200px;"></div>
+
+<div class="container" >
+  <div class="row">
+    <div class="col-sm-4"></div>
+    <div class="col-sm-4">
+      <div class="panel-group" onmouseover="fadeLess(this)" onmouseout="fadeMore(this)">
+        <div class="panel panel-primary">
+            <div class="panel-heading">My Todo List</div>
+            <div ng-app="myApp" ng-controller="myCtrl" class="panel-body">
+              <table class="table table-striped" >
+                <thead>
+                  <tr>
+                    <div class="input-group">
+                      <input ng-model="itemToAdd" type="text" class="form-control" placeholder="Todo" name="todo">
+                      <div class="input-group-btn">
+                        <button class="btn btn-success" type="submit" ng-click="addItem()">Add</button>
+                      </div>
+                     </div>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="x in todoItems">
+                    <td> {{ x }} <span  class="glyphicon glyphicon-remove pull-right" style="cursor:pointer;" ng-click="removeItem($index)"></span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4"></div>
+  </div>
+</div>
+
+<script>
+
+var app = angular.module("myApp", []);
+
+app.controller("myCtrl", function($scope,$http) {
+  $scope.todoItems = [];
+
+  $http.get('http://localhost:3000/todoList')
+         .then(function (response){
+              list = [];
+              for (var i = response.data.length - 1; i >= 0; i--) {
+                list.push(response.data[i].item);
+              }
+              $scope.todoItems = list;
+          
+           },function (error){
+           
+           });
+    
+    $scope.addItem = function () {
+        if (!$scope.itemToAdd) {
+          return;
+        }        
+        
+        if ($scope.todoItems.indexOf($scope.itemToAdd) == -1) {
+            var todoData = $.param({item: $scope.itemToAdd});
+
+            $http({
+              method: 'POST',
+              url: 'http://localhost:3000/addItem',
+              data: todoData,
+              headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            })
+            .then(function (response){
+              list = [];
+              for (var i = response.data.length - 1; i >= 0; i--) {
+                list.push(response.data[i].item);
+              }
+              $scope.todoItems = list;
+            },
+            function (error){
+              console.log(error);
+            });
+        } 
+
+        $scope.itemToAdd="";
+    }
+
+    $scope.removeItem = function (x) {    
+       
+        var toDelete = $.param({item: $scope.todoItems[x]});
+        
+        $http({
+            method: 'POST',
+            url: '/delete',
+            data: toDelete,
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        })
+        .then(function(response) {
+            list = [];
+              for (var i = response.data.length - 1; i >= 0; i--) {
+                list.push(response.data[i].item);
+              }
+              $scope.todoItems = list;
+        }, function(error) {
+            console.log(error.data);
+        });
+    }
+});
+
+</script>
+
+</body>
+</html>
